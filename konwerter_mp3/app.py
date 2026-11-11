@@ -41,6 +41,14 @@ def run_one_download(
     announcer.say(f"Gotowe. Zapisano plik {name} w folderze Pobrane.")
 
 
+def _wait_before_exit() -> None:
+    """Nie zamykaj od razu okna, żeby dało się przeczytać komunikat."""
+    try:
+        input("Naciśnij Enter, aby zamknąć.")
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     announcer = Announcer()
     app_dir = get_app_dir()
@@ -59,8 +67,13 @@ def main(argv: Optional[list[str]] = None) -> int:
             announcer.say("Pliki pobrane. Program jest gotowy do użycia.")
     except Exception as exc:
         logger.exception("Setup nie powiódł się")
-        announcer.say("Nie udało się pobrać potrzebnych plików. Sprawdź połączenie z internetem.")
+        announcer.say(
+            "Nie udało się pobrać potrzebnych plików. Sprawdź połączenie z internetem "
+            "i czy antywirus nie blokuje programu."
+        )
+        announcer.say(f"Szczegóły są w pliku {app_dir / 'log.txt'}")
         error_beep()
+        _wait_before_exit()
         return 2
 
     runner = YtDlpRunner(yt_dlp_path, ffmpeg_path)
