@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "konwerter-mp3"
-version = "1.0.0"
+version = "1.1.0"
 description = "Dostępny konwerter YouTube do MP3 dla Windows (aplikacja konsolowa)"
 readme = "README.md"
 requires-python = ">=3.12"

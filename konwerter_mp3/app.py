@@ -15,14 +15,52 @@ from .setup_tools import ensure_ffmpeg, ensure_yt_dlp
 from .validation import is_valid_youtube_url
 
 
+FORMAT_LABELS = {"mp3": "MP3", "mp4": "MP4"}
+_FORMAT_CHOICES = {
+    "1": "mp3", "mp3": "mp3", "m": "mp3",
+    "2": "mp4", "mp4": "mp4", "f": "mp4", "film": "mp4", "wideo": "mp4",
+}
+
+
+def parse_format_choice(raw: str, default: str) -> Optional[str]:
+    """Zwraca "mp3"/"mp4", ``default`` dla pustego wpisu, None gdy nieznany."""
+    text = raw.strip().lower().lstrip(".")
+    if not text:
+        return default
+    return _FORMAT_CHOICES.get(text)
+
+
+def format_prompt(default: str) -> str:
+    return (
+        "Wybierz format. Wpisz 1, aby pobrać dźwięk MP3, albo 2, aby pobrać film MP4. "
+        f"Sam Enter wybiera {FORMAT_LABELS[default]}."
+    )
+
+
+def ask_format(announcer: Announcer, default: str, read=input) -> Optional[str]:
+    """Pyta o format. Zwraca None, gdy użytkownik zamknął wejście."""
+    while True:
+        announcer.say(format_prompt(default))
+        try:
+            raw = read()
+        except EOFError:
+            return None
+        fmt = parse_format_choice(raw, default)
+        if fmt:
+            return fmt
+        announcer.say("Nie rozumiem. Wpisz 1 albo 2.")
+        error_beep()
+
+
 def run_one_download(
     url: str,
     runner: YtDlpRunner,
     downloads_dir: Path,
     announcer: Announcer,
     logger,
+    fmt: str = "mp3",
 ) -> None:
-    tracker = ProgressAnnouncer(announcer.say)
+    tracker = ProgressAnnouncer(announcer.say, fmt=fmt)
     all_lines: list[str] = []
 
     def on_line(line: str) -> None:
@@ -30,13 +68,13 @@ def run_one_download(
         logger.debug(line)
         tracker.feed(line)
 
-    rc, _ = runner.download(url, downloads_dir, on_line)
+    rc, _ = runner.download(url, downloads_dir, on_line, fmt=fmt)
     if rc != 0:
         err_text = collect_error_lines(all_lines) or "\n".join(all_lines[-20:])
         raise ConverterError(map_yt_dlp_error(err_text), detail=err_text)
 
-    name = tracker.mp3_filename or (
-        f"{tracker.title}.mp3" if tracker.title else "plik.mp3"
+    name = tracker.output_filename or (
+        f"{tracker.title}.{fmt}" if tracker.title else f"plik.{fmt}"
     )
     announcer.say(f"Gotowe. Zapisano plik {name} w folderze Pobrane.")
 
@@ -55,7 +93,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     app_dir.mkdir(parents=True, exist_ok=True)
     logger = setup_logger(app_dir / "log.txt")
 
-    announcer.say("Konwerter YouTube do MP3.")
+    announcer.say("Konwerter YouTube do MP3 i MP4.")
 
     try:
         first_run = not (app_dir / "yt-dlp.exe").exists() or not (app_dir / "ffmpeg.exe").exists()
@@ -85,6 +123,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     downloads_dir = get_downloads_folder()
 
+    last_format = "mp3"
     pending_from_clipboard: Optional[str] = None
     clip = read_clipboard_text()
     if clip and is_valid_youtube_url(clip.strip()):
@@ -118,7 +157,16 @@ def main(argv: Optional[list[str]] = None) -> int:
             continue
 
         try:
-            run_one_download(url, runner, downloads_dir, announcer, logger)
+            fmt = ask_format(announcer, last_format)
+        except KeyboardInterrupt:
+            announcer.say("Przerwano.")
+            return 1
+        if fmt is None:
+            break
+        last_format = fmt
+
+        try:
+            run_one_download(url, runner, downloads_dir, announcer, logger, fmt=fmt)
             success_beep()
         except ConverterError as exc:
             logger.error("Konwersja nie powiodła się: %s", exc.detail)

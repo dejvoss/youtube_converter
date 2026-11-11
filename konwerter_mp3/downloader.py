@@ -5,22 +5,38 @@ from pathlib import Path
 from typing import Callable, Iterable, List, Sequence
 
 
+FORMATS = ("mp3", "mp4")
+
+
+def _format_args(fmt: str) -> List[str]:
+    if fmt == "mp3":
+        return ["-x", "--audio-format", "mp3", "--audio-quality", "0"]
+    if fmt == "mp4":
+        # H.264 + AAC w kontenerze MP4 odtworzy każdy odtwarzacz w Windows.
+        return [
+            "-f", "bv*+ba/b",
+            "-S", "vcodec:h264,res,acodec:m4a",
+            "--merge-output-format", "mp4",
+        ]
+    raise ValueError(f"Nieznany format: {fmt}")
+
+
 def build_yt_dlp_command(
     yt_dlp_path: Path,
     ffmpeg_path: Path,
     url: str,
     downloads_dir: Path,
+    fmt: str = "mp3",
 ) -> List[str]:
     """Build the yt-dlp argv.
 
     ``ffmpeg_path`` is the folder (or file) containing ffmpeg.exe/ffprobe.exe.
     yt-dlp's --ffmpeg-location accepts either a directory or a file path.
+    ``fmt`` is ``"mp3"`` (audio only) or ``"mp4"`` (video).
     """
     return [
         str(yt_dlp_path),
-        "-x",
-        "--audio-format", "mp3",
-        "--audio-quality", "0",
+        *_format_args(fmt),
         "--no-playlist",
         "--embed-metadata",
         "--ffmpeg-location", str(ffmpeg_path),
@@ -48,16 +64,17 @@ class YtDlpRunner:
         self.ffmpeg_path = Path(ffmpeg_path)
         self._popen = popen
 
-    def build_command(self, url: str, downloads_dir: Path) -> List[str]:
-        return build_yt_dlp_command(self.yt_dlp_path, self.ffmpeg_path, url, downloads_dir)
+    def build_command(self, url: str, downloads_dir: Path, fmt: str = "mp3") -> List[str]:
+        return build_yt_dlp_command(self.yt_dlp_path, self.ffmpeg_path, url, downloads_dir, fmt)
 
     def download(
         self,
         url: str,
         downloads_dir: Path,
         on_line: Callable[[str], None],
+        fmt: str = "mp3",
     ) -> tuple[int, List[str]]:
-        cmd = self.build_command(url, downloads_dir)
+        cmd = self.build_command(url, downloads_dir, fmt)
         proc = self._popen(
             cmd,
             stdout=subprocess.PIPE,
