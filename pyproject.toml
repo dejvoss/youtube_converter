@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "konwerter-mp3"
+version = "1.0.0"
+description = "Dostępny konwerter YouTube do MP3 dla Windows (aplikacja konsolowa)"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Konwerter MP3" }]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: Polish",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Conversion",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pyinstaller>=6.6"]
+
+[project.scripts]
+konwerter-mp3 = "konwerter_mp3.app:main"
+
+[tool.setuptools.packages.find]
+include = ["konwerter_mp3*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

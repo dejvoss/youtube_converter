@@ -1,0 +1,2 @@
+# Runtime zależności: brak. Program używa wyłącznie biblioteki standardowej Pythona.
+# yt-dlp.exe i ffmpeg.exe są pobierane przy pierwszym uruchomieniu.
