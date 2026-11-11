@@ -54,6 +54,24 @@ Jeśli w chwili startu w schowku masz już link do YouTube, program to wykryje i
 powie: „W schowku jest link do YouTube. Naciśnij Enter, aby go pobrać, albo
 wklej inny.” Wtedy wystarczy nacisnąć Enter.
 
+## Sygnały dźwiękowe
+
+Program celowo używa krótkich sygnałów dźwiękowych zamiast dodatkowych
+komunikatów głosowych, żeby nie przeszkadzać czytnikowi ekranu i żeby
+szybciej rozpoznać wynik „uchem", bez czekania aż NVDA skończy czytać.
+
+- **Sukces** — krótki, wysoki dźwięk (systemowy dźwięk „Asterisk" / „Gwiazdka").
+  Oznacza: plik MP3 został zapisany w folderze Pobrane.
+- **Błąd** — niski, ostrzegawczy dźwięk (systemowy „Critical Stop" / „Zatrzymanie
+  krytyczne"). Oznacza: coś poszło nie tak (np. zły link, prywatny film, brak
+  internetu). Po dźwięku program i tak powie głosem, co się stało.
+
+Dźwięki pochodzą z motywu dźwiękowego systemu Windows, więc brzmią znajomo
+i można je zmienić w **Panel sterowania → Dźwięk → zakładka Dźwięki**
+(odpowiednio zdarzenia „Gwiazdka" i „Zatrzymanie krytyczne"). Jeśli masz
+Windows w trybie wyciszonym, dźwięków nie usłyszysz — ale komunikaty głosowe
+czytnika ekranu i tak zawsze się pojawią.
+
 ## Gdzie są pliki
 
 - Plik `.exe`: tam, gdzie go zapisałeś.
