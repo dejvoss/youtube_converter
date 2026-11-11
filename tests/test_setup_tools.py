@@ -57,3 +57,9 @@ def test_extract_ffmpeg_requires_both_binaries(tmp_path):
         zf.writestr("ffmpeg-x/bin/ffmpeg.exe", b"1")
     with pytest.raises(IOError):
         extract_ffmpeg_binaries(z, tmp_path)
+
+
+def test_ssl_contexts_prefers_windows_store():
+    names = [n for n, _ in setup_tools._ssl_contexts()]
+    assert names[0] == "certyfikaty Windows"
+    assert names[-1] == "domyślne Pythona"

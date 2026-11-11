@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import shutil
-import subprocess
+import ssl
 import tempfile
 import urllib.request
 import zipfile
@@ -22,53 +22,45 @@ _TIMEOUT = 300
 _MIN_SIZE = 100_000  # prawdziwe pliki mają kilka-kilkadziesiąt MB
 
 
-def _download_urllib(url: str, dest: Path) -> None:
+def _ssl_contexts() -> list:
+    """Konteksty SSL do wypróbowania, od najlepszego.
+
+    truststore korzysta bezpośrednio z magazynu certyfikatów Windows
+    (tak jak przeglądarka), więc działa także wtedy, gdy wbudowana lista
+    certyfikatów Pythona nie wystarcza (CERTIFICATE_VERIFY_FAILED).
+    """
+    contexts = []
+    try:
+        import truststore
+
+        contexts.append(("certyfikaty Windows", truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)))
+    except Exception:
+        pass
+    try:
+        import certifi
+
+        contexts.append(("certifi", ssl.create_default_context(cafile=certifi.where())))
+    except Exception:
+        pass
+    contexts.append(("domyślne Pythona", ssl.create_default_context()))
+    return contexts
+
+
+def _download_urllib(url: str, dest: Path, context: Optional[ssl.SSLContext] = None) -> None:
     req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
-    with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp, open(dest, "wb") as out:
+    with urllib.request.urlopen(req, timeout=_TIMEOUT, context=context) as resp, open(dest, "wb") as out:
         shutil.copyfileobj(resp, out)
 
 
-def _no_window() -> int:
-    return getattr(subprocess, "CREATE_NO_WINDOW", 0)
+def _methods() -> list:
+    methods = []
+    for name, ctx in _ssl_contexts():
+        def method(url: str, dest: Path, _ctx=ctx) -> None:
+            _download_urllib(url, dest, _ctx)
 
-
-def _download_curl(url: str, dest: Path) -> None:
-    # curl.exe jest wbudowany w Windows 10/11 i używa certyfikatów systemu
-    # (Schannel), więc działa tam, gdzie Python ma problem z SSL.
-    system32 = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32"
-    curl = system32 / "curl.exe"
-    exe = str(curl) if curl.exists() else (shutil.which("curl") or "curl")
-    subprocess.run(
-        [exe, "-fsSL", "--retry", "3", "-A", _USER_AGENT, "-o", str(dest), url],
-        check=True,
-        timeout=_TIMEOUT,
-        creationflags=_no_window(),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-    )
-
-
-def _download_powershell(url: str, dest: Path) -> None:
-    script = (
-        "$ProgressPreference='SilentlyContinue';"
-        "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;"
-        f"Invoke-WebRequest -UseBasicParsing -Uri '{url}' -OutFile '{dest}'"
-    )
-    subprocess.run(
-        ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
-        check=True,
-        timeout=_TIMEOUT,
-        creationflags=_no_window(),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-    )
-
-
-_METHODS: list[Callable[[str, Path], None]] = [
-    _download_urllib,
-    _download_curl,
-    _download_powershell,
-]
+        method.__name__ = f"urllib ({name})"
+        methods.append(method)
+    return methods
 
 
 def _download(url: str, dest: Path, methods: Optional[list] = None) -> None:
@@ -80,7 +72,7 @@ def _download(url: str, dest: Path, methods: Optional[list] = None) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     part = dest.with_name(dest.name + ".part")
     errors: list[str] = []
-    for method in methods if methods is not None else _METHODS:
+    for method in methods if methods is not None else _methods():
         try:
             part.unlink(missing_ok=True)
             method(url, part)
@@ -90,8 +82,6 @@ def _download(url: str, dest: Path, methods: Optional[list] = None) -> None:
             return
         except Exception as exc:  # próbujemy następnej metody
             detail = exc
-            if isinstance(exc, subprocess.CalledProcessError) and exc.stderr:
-                detail = f"{exc} | {exc.stderr.decode(errors='replace').strip()}"
             errors.append(f"{getattr(method, '__name__', method)}: {detail}")
             logging.getLogger("konwerter_mp3").warning(
                 "Pobieranie %s metodą %s nie powiodło się: %s",

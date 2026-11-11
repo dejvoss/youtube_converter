@@ -1,2 +1,4 @@
-# Runtime zależności: brak. Program używa wyłącznie biblioteki standardowej Pythona.
+# Runtime: truststore (certyfikaty Windows) i certifi (zapasowa lista certyfikatów).
 # yt-dlp.exe i ffmpeg.exe są pobierane przy pierwszym uruchomieniu.
+truststore>=0.10
+certifi>=2024.2.2
