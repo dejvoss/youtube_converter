@@ -88,10 +88,39 @@ def _wait_before_exit() -> None:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    announcer = Announcer()
     app_dir = get_app_dir()
     app_dir.mkdir(parents=True, exist_ok=True)
     logger = setup_logger(app_dir / "log.txt")
+    _enable_crash_log(app_dir / "crash.txt")
+    try:
+        return _main(app_dir, logger)
+    except Exception:
+        logger.exception("Nieoczekiwany błąd przy uruchomieniu")
+        Announcer().say(
+            f"Wystąpił nieoczekiwany błąd. Szczegóły są w pliku {app_dir / 'log.txt'}"
+        )
+        error_beep()
+        _wait_before_exit()
+        return 3
+
+
+_crash_file = None
+
+
+def _enable_crash_log(path: Path) -> None:
+    """Zapisuje ślad nawet przy twardym crashu (np. błąd w ctypes)."""
+    global _crash_file
+    try:
+        import faulthandler
+
+        _crash_file = open(path, "a", encoding="utf-8")
+        faulthandler.enable(_crash_file)
+    except Exception:
+        pass
+
+
+def _main(app_dir: Path, logger) -> int:
+    announcer = Announcer()
 
     announcer.say("Konwerter YouTube do MP3 i MP4.")
 
