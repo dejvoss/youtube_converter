@@ -1,8 +1,9 @@
-# Konwerter YouTube do MP3
+# Konwerter YouTube do MP3 i MP4
 
 Prosta aplikacja konsolowa dla systemu Windows, zaprojektowana tak, aby dobrze
 współpracowała z czytnikami ekranu (NVDA, JAWS). Wklejasz link do filmu z
-YouTube, naciskasz Enter, a program zapisuje plik MP3 w folderze Pobrane.
+YouTube, wybierasz format (dźwięk MP3 albo film MP4), a program zapisuje plik
+w folderze Pobrane.
 
 - Jeden plik `.exe`, bez instalacji.
 - Bez przeglądarki, bez reklam, bez konta.
@@ -35,17 +36,27 @@ To normalne zachowanie dla nowych, niepodpisanych plików `.exe`.
 
 Po uruchomieniu program odczyta:
 
-> Konwerter YouTube do MP3.
+> Konwerter YouTube do MP3 i MP4.
 >
 > Wklej link i naciśnij Enter. Aby zakończyć, naciśnij Enter bez wpisywania niczego.
 
-Wklej link (Ctrl+V), naciśnij Enter i poczekaj. Usłyszysz:
+Wklej link (Ctrl+V) i naciśnij Enter. Program zapyta o format:
+
+> Wybierz format. Wpisz 1, aby pobrać dźwięk MP3, albo 2, aby pobrać film MP4.
+> Sam Enter wybiera MP3.
+
+- `1` (albo `mp3`) — sam dźwięk, plik `.mp3`.
+- `2` (albo `mp4`, `film`) — film z dźwiękiem, plik `.mp4` (H.264 + AAC,
+  otworzy go każdy odtwarzacz w Windows).
+- Sam Enter — ostatnio wybrany format (na początku MP3).
+
+Potem poczekaj. Usłyszysz:
 
 - „Pobieram: *tytuł filmu*.”
 - „Pobrano 25 procent.” — i podobnie dla 50 i 75.
-- „Konwertuję do MP3.”
+- „Konwertuję do MP3.” (dla MP3) albo „Łączę obraz z dźwiękiem.” (dla MP4).
 - Krótki sygnał dźwiękowy.
-- „Gotowe. Zapisano plik *tytuł*.mp3 w folderze Pobrane.”
+- „Gotowe. Zapisano plik *tytuł*.mp3 (lub .mp4) w folderze Pobrane.”
 
 Po zakończeniu program zapyta o kolejny link. Aby zakończyć, naciśnij Enter
 bez wpisywania niczego.
@@ -61,7 +72,7 @@ komunikatów głosowych, żeby nie przeszkadzać czytnikowi ekranu i żeby
 szybciej rozpoznać wynik „uchem", bez czekania aż NVDA skończy czytać.
 
 - **Sukces** — krótki, wysoki dźwięk (systemowy dźwięk „Asterisk" / „Gwiazdka").
-  Oznacza: plik MP3 został zapisany w folderze Pobrane.
+  Oznacza: plik MP3 lub MP4 został zapisany w folderze Pobrane.
 - **Błąd** — niski, ostrzegawczy dźwięk (systemowy „Critical Stop" / „Zatrzymanie
   krytyczne"). Oznacza: coś poszło nie tak (np. zły link, prywatny film, brak
   internetu). Po dźwięku program i tak powie głosem, co się stało.
@@ -77,7 +88,7 @@ czytnika ekranu i tak zawsze się pojawią.
 - Plik `.exe`: tam, gdzie go zapisałeś.
 - Pliki pomocnicze (`yt-dlp.exe`, `ffmpeg.exe`, `log.txt`):
   `%LOCALAPPDATA%\KonwerterMP3\`.
-- Pobrane piosenki: w folderze Pobrane (jeśli masz go przeniesionego do
+- Pobrane piosenki i filmy: w folderze Pobrane (jeśli masz go przeniesionego do
   OneDrive, program to uwzględni).
 
 ## Obsługiwane linki
@@ -148,6 +159,9 @@ jeden procent, pobieram dwa procent, pobieram trzy procent”.
    wpisywania niczego.”*
 4. Skopiuj do schowka link do krótkiego, publicznego filmu (najlepiej
    30-sekundowego), wklej `Ctrl+V`, naciśnij Enter.
+4a. NVDA odczyta pytanie o format. Naciśnij Enter (MP3). Powtórz scenariusz
+   z `2` i Enter — powinien powstać plik `.mp4`, a zamiast „Konwertuję do
+   MP3” usłyszysz „Łączę obraz z dźwiękiem.”
 5. **Krytyczne:** w trakcie pobierania NVDA powinien odczytać **tylko** cztery
    zdania, każde raz:
    - „Pobieram: *tytuł filmu*.”
@@ -181,7 +195,7 @@ jeden procent, pobieram dwa procent, pobieram trzy procent”.
 ### Scenariusz 4 — brak internetu
 
 1. Odłącz Wi-Fi.
-2. Uruchom program i wklej dowolny poprawny link YouTube.
+2. Uruchom program, wklej dowolny poprawny link YouTube i wybierz format.
 3. NVDA powinien odczytać: *„Brak połączenia z internetem. Sprawdź połączenie
    i spróbuj ponownie.”* — bez technicznego tracebacka.
 
